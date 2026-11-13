@@ -114,3 +114,9 @@ if st.button("Predict drug class", type="primary"):
     except Exception as error:
         st.error("Prediction failed.")
         st.exception(error)
+
+
+
+
+        
+
