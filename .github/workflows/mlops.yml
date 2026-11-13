@@ -16,13 +16,11 @@ permissions:
 
 jobs:
 
-  # JOB 1: Model training and evaluation
   train-evaluate:
-    name: Train and Evaluate Model
+    name: Train and Evaluate Three Models
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -37,29 +35,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Train model
+      - name: Train all models
         run: |
           python train.py
 
-      - name: Evaluate model
+      - name: Evaluate all models
         run: |
           python evaluate.py
 
-      # Save evaluation results
-      - name: Upload evaluation results
+      - name: Upload trained models and evaluation results
         uses: actions/upload-artifact@v4
         with:
-          name: drug-classification-results
+          name: drug-classification-models
           path: |
+            Model/drug_rf.joblib
+            Model/drug_dt.joblib
+            Model/drug_lr.joblib
             Results/metrics.json
-            Results/metrics.txt
-            Results/confusion_matrix.png
-            Results/training_metadata.json
+            Results/test_data.joblib
+            Results/sample_input.csv
+            Results/confusion_matrix_*.png
           if-no-files-found: error
 
-  # JOB 2: Register model in Snowflake
-  register-snowflake-model:
-    name: Register Model in Snowflake
+  register-snowflake-models:
+    name: Register Three Models in Snowflake
     needs: train-evaluate
 
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -67,7 +66,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -77,21 +75,18 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install project dependencies
+      - name: Download trained models and metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: drug-classification-models
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-snowflake.txt
 
-      - name: Train model
-        run: |
-          python train.py
-
-      - name: Evaluate model
-        run: |
-          python evaluate.py
-
-      - name: Register model in Snowflake
+      - name: Register models in Snowflake
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
