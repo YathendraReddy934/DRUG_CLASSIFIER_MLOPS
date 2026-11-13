@@ -50,6 +50,26 @@ jobs:
           npm install --global @dvcorg/cml
           cml --version
 
+      - name: Install CML
+        uses: iterative/setup-cml@v2
+
+      - name: Verify CML installation
+        run: |
+          which cml
+          cml --version
+
+      - name: Create CML report
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "# Drug Classification Model Report" > report.md
+          echo "" >> report.md
+          echo "## Evaluation Metrics" >> report.md
+          cat Results/metrics.txt >> report.md
+          echo "" >> report.md
+          echo "Commit: $GITHUB_SHA" >> report.md
+          cml comment create report.md
+
       # Generate and publish evaluation report
       - name: Create CML report
         env:
