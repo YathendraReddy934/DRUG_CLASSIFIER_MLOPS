@@ -13,14 +13,12 @@ on:
 
 permissions:
   contents: read
-  issues: write
-  pull-requests: write
 
 jobs:
 
-  # JOB 1: Train and evaluate the model
+  # JOB 1: Model training and evaluation
   train-evaluate:
-    name: Train and Evaluate Drug Classification Model
+    name: Train and Evaluate Model
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +32,7 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -47,35 +45,7 @@ jobs:
         run: |
           python evaluate.py
 
-      # Install CML using the official GitHub Action
-      - name: Install CML
-        uses: iterative/setup-cml@v2
-
-      # Verify CML is available
-      - name: Verify CML installation
-        run: |
-          which cml
-          cml --version
-
-      # Generate evaluation report
-      - name: Create CML report
-        env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "# Drug Classification Model Report" > report.md
-          echo "" >> report.md
-
-          echo "## Evaluation Metrics" >> report.md
-          echo "" >> report.md
-          cat Results/metrics.txt >> report.md
-
-          echo "" >> report.md
-          echo "## Build Information" >> report.md
-          echo "Commit: $GITHUB_SHA" >> report.md
-
-          cml comment create report.md
-
-      # Upload model evaluation results
+      # Save evaluation results
       - name: Upload evaluation results
         uses: actions/upload-artifact@v4
         with:
