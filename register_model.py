@@ -139,6 +139,43 @@ def main():
             auto_create_table=False,
             overwrite=False
         )
+        # --------------------------------------------------
+        # CHAMPION MODEL SELECTION
+        # --------------------------------------------------
+
+        # Select the model with the highest Macro F1
+        champion = max(
+            metric_rows,
+            key=lambda row: row["MACRO_F1"]
+        )
+
+        champion_df = pd.DataFrame([{
+            "RUN_COMMIT": commit_sha,
+            "MODEL_NAME": champion["MODEL_NAME"],
+            "ALGORITHM": champion["ALGORITHM"],
+            "MODEL_VERSION": champion["MODEL_VERSION"],
+            "SELECTION_METRIC": "MACRO_F1",
+            "METRIC_VALUE": champion["MACRO_F1"]
+        }])
+
+        session.write_pandas(
+            champion_df,
+            table_name="MODEL_CHAMPION_HISTORY",
+            database=DATABASE,
+            schema=RESULTS_SCHEMA,
+            auto_create_table=False,
+            overwrite=False
+        )
+
+        print(
+            f"\nChampion model: {champion['MODEL_NAME']}"
+        )
+        print(
+            f"Champion algorithm: {champion['ALGORITHM']}"
+        )
+        print(
+            f"Champion Macro F1: {champion['MACRO_F1']:.4f}"
+        )
 
         print("\nAll three models registered successfully.")
         print("Three model metric rows written to Snowflake.")
