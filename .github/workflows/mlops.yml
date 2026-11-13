@@ -16,6 +16,8 @@ permissions:
   pull-requests: write
 
 jobs:
+
+  # JOB 1: Model training and evaluation
   train-evaluate:
     runs-on: ubuntu-latest
 
@@ -35,23 +37,36 @@ jobs:
           pip install -r requirements.txt
 
       - name: Train model
-        run: python train.py
+        run: |
+          python train.py
 
       - name: Evaluate model
-        run: python evaluate.py
+        run: |
+          python evaluate.py
 
+      # Explicitly install CML and verify its executable
+      - name: Install CML
+        run: |
+          npm install --global @dvcorg/cml
+          cml --version
+
+      # Generate and publish evaluation report
       - name: Create CML report
         env:
-          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_TOKEN: ${{ github.token }}
         run: |
           echo "# Drug Classification Model Report" > report.md
           echo "" >> report.md
-          echo "## Evaluation metrics" >> report.md
+          echo "## Evaluation Metrics" >> report.md
+          echo "" >> report.md
           cat Results/metrics.txt >> report.md
           echo "" >> report.md
+          echo "## Build Information" >> report.md
           echo "Commit: $GITHUB_SHA" >> report.md
+
           cml comment create report.md
 
+      # Store evaluation outputs
       - name: Upload evaluation results
         uses: actions/upload-artifact@v4
         with:
@@ -62,9 +77,12 @@ jobs:
             Results/confusion_matrix.png
             Results/training_metadata.json
 
+  # JOB 2: Register trained model in Snowflake
   register-snowflake-model:
     needs: train-evaluate
+
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     runs-on: ubuntu-latest
 
     steps:
@@ -84,10 +102,12 @@ jobs:
           pip install -r requirements-snowflake.txt
 
       - name: Train model
-        run: python train.py
+        run: |
+          python train.py
 
       - name: Evaluate model
-        run: python evaluate.py
+        run: |
+          python evaluate.py
 
       - name: Register model in Snowflake
         env:
@@ -100,6 +120,5 @@ jobs:
           SNOWFLAKE_MODEL_SCHEMA: ${{ secrets.SNOWFLAKE_MODEL_SCHEMA }}
           SNOWFLAKE_RESULTS_SCHEMA: ${{ secrets.SNOWFLAKE_RESULTS_SCHEMA }}
           GITHUB_SHA: ${{ github.sha }}
-        run: python register_model.py
-      - name: Install CML
-        uses: iterative/setup-cml@v2
+        run: |
+          python register_model.py
