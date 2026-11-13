@@ -1,0 +1,18 @@
+DRUG CLASSIFICATION MODEL EVALUATION
+=============================================
+Accuracy: 0.9750
+Weighted F1: 0.9747
+Macro F1: 0.9851
+
+Classification Report
+              precision    recall  f1-score   support
+
+       DrugY       0.95      1.00      0.97        18
+       drugA       1.00      1.00      1.00         5
+       drugB       1.00      1.00      1.00         3
+       drugC       1.00      1.00      1.00         3
+       drugX       1.00      0.91      0.95        11
+
+    accuracy                           0.97        40
+   macro avg       0.99      0.98      0.99        40
+weighted avg       0.98      0.97      0.97        40

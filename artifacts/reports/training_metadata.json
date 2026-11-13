@@ -1,0 +1,20 @@
+{
+    "algorithm": "RandomForestClassifier",
+    "training_rows": 160,
+    "testing_rows": 40,
+    "features": [
+        "Age",
+        "Sex",
+        "BP",
+        "Cholesterol",
+        "Na_to_K"
+    ],
+    "target": "Drug",
+    "classes": [
+        "DrugY",
+        "drugA",
+        "drugB",
+        "drugC",
+        "drugX"
+    ]
+}

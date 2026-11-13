@@ -16,11 +16,16 @@ permissions:
 
 jobs:
 
+  # --------------------------------------------------
+  # JOB 1: TRAIN AND EVALUATE
+  # --------------------------------------------------
+
   train-evaluate:
     name: Train and Evaluate Three Models
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -37,35 +42,44 @@ jobs:
 
       - name: Train all models
         run: |
-          python train.py
+          python scripts/train.py
 
       - name: Evaluate all models
         run: |
-          python evaluate.py
+          python scripts/evaluate.py
 
       - name: Upload trained models and evaluation results
         uses: actions/upload-artifact@v4
         with:
           name: drug-classification-models
           path: |
-            Model/drug_rf.joblib
-            Model/drug_dt.joblib
-            Model/drug_lr.joblib
-            Results/metrics.json
-            Results/test_data.joblib
-            Results/sample_input.csv
-            Results/confusion_matrix_*.png
+            artifacts/models/drug_rf.joblib
+            artifacts/models/drug_dt.joblib
+            artifacts/models/drug_lr.joblib
+            artifacts/reports/metrics.json
+            artifacts/reports/test_data.joblib
+            artifacts/reports/sample_input.csv
+            artifacts/reports/confusion_matrix_*.png
           if-no-files-found: error
+          retention-days: 7
+
+
+  # --------------------------------------------------
+  # JOB 2: REGISTER MODELS IN SNOWFLAKE
+  # --------------------------------------------------
 
   register-snowflake-models:
     name: Register Three Models in Snowflake
     needs: train-evaluate
 
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
 
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -79,6 +93,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: drug-classification-models
+          path: .
 
       - name: Install dependencies
         run: |
@@ -98,4 +113,4 @@ jobs:
           SNOWFLAKE_RESULTS_SCHEMA: ${{ secrets.SNOWFLAKE_RESULTS_SCHEMA }}
           GITHUB_SHA: ${{ github.sha }}
         run: |
-          python register_model.py
+          python scripts/register_model.py

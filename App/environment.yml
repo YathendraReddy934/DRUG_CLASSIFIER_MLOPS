@@ -1,0 +1,12 @@
+
+name: drug_classifier_env
+
+channels:
+  - snowflake
+
+dependencies:
+  - python=3.11
+  - streamlit
+  - pandas
+  - snowflake-snowpark-python
+  - snowflake-ml-python
