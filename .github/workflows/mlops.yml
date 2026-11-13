@@ -1,0 +1,105 @@
+
+name: Drug Classification MLOps
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  train-evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Train model
+        run: python train.py
+
+      - name: Evaluate model
+        run: python evaluate.py
+
+      - name: Create CML report
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "# Drug Classification Model Report" > report.md
+          echo "" >> report.md
+          echo "## Evaluation metrics" >> report.md
+          cat Results/metrics.txt >> report.md
+          echo "" >> report.md
+          echo "Commit: $GITHUB_SHA" >> report.md
+          cml comment create report.md
+
+      - name: Upload evaluation results
+        uses: actions/upload-artifact@v4
+        with:
+          name: drug-classification-results
+          path: |
+            Results/metrics.json
+            Results/metrics.txt
+            Results/confusion_matrix.png
+            Results/training_metadata.json
+
+  register-snowflake-model:
+    needs: train-evaluate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-snowflake.txt
+
+      - name: Train model
+        run: python train.py
+
+      - name: Evaluate model
+        run: python evaluate.py
+
+      - name: Register model in Snowflake
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_MODEL_SCHEMA: ${{ secrets.SNOWFLAKE_MODEL_SCHEMA }}
+          SNOWFLAKE_RESULTS_SCHEMA: ${{ secrets.SNOWFLAKE_RESULTS_SCHEMA }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: python register_model.py
+      - name: Install CML
+        uses: iterative/setup-cml@v2

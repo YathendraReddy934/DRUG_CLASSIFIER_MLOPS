@@ -1,0 +1,14 @@
+
+definition_version: 2
+
+entities:
+  drug_classifier_app:
+    type: streamlit
+    identifier: DRUG_CLASSIFIER_APP
+    database: AGENT_QUICKSTART
+    schema: DRUG_CLASSIFIER_APP
+    query_warehouse: COMPUTE_WH
+    main_file: App/streamlit_app.py
+    artifacts:
+      - App/streamlit_app.py
+      - environment.yml

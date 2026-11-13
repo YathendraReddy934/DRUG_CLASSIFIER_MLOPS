@@ -1,0 +1,4 @@
+
+python-dotenv
+snowflake-snowpark-python
+snowflake-ml-python
